@@ -1,0 +1,15 @@
+{
+  "name": "سوپر اپلیکیشن بازی و ترجمه",
+  "short_name": "بازی و ترجمه",
+  "start_url": "index.html",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4caf50",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3081/3081387.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
