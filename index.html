@@ -124,8 +124,8 @@
 
   <script>
     /* تنظیمات دیتابیس سوپابیس */
-    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // آدرس پروژه سوپابیس
-    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // کلید عمومی (anon key)
+    const SUPABASE_URL = 'YOUR_SUPABASE_URL'; // آدرس پروژه سوپابیس خود را اینجا جای‌گذاری کنید
+    const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // کلید anon key را اینجا جای‌گذاری کنید
     
     let supabaseClient = null;
     if (SUPABASE_URL !== 'YOUR_SUPABASE_URL') {
@@ -262,7 +262,7 @@
       }
     }
 
-    /* آپلود مستقیم فایل به سوپابیس */
+    /* آپلود مستقیم فایل به پوشه sarina-image در سوپابیس */
     async function uploadToSupabase() {
       const fileInput = document.getElementById('imageInput');
       const status = document.getElementById('uploadStatus');
@@ -282,7 +282,7 @@
       status.textContent = 'در حال آپلود عکس به سوپابیس...';
 
       try {
-        const { data, error } = await supabaseClient.storage.from('photos').upload(fileName, file);
+        const { data, error } = await supabaseClient.storage.from('sarina-image').upload(fileName, file);
         if (error) throw error;
 
         status.textContent = 'عکس با موفقیت آپلود شد و برای همه قابل مشاهده است!';
@@ -293,19 +293,19 @@
       }
     }
 
-    /* بارگیری لیست عکس‌ها از سوپابیس */
+    /* بارگیری لیست عکس‌ها از پوشه sarina-image در سوپابیس */
     async function loadSupabaseGallery() {
       const gallery = document.getElementById('galleryGrid');
       if (!supabaseClient) return;
 
       try {
-        const { data, error } = await supabaseClient.storage.from('photos').list('', { sortBy: { column: 'created_at', order: 'desc' } });
+        const { data, error } = await supabaseClient.storage.from('sarina-image').list('', { sortBy: { column: 'created_at', order: 'desc' } });
         if (error) throw error;
 
         gallery.innerHTML = '';
         data.forEach(item => {
           if (item.name !== '.emptyFolderPlaceholder') {
-            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/photos/${item.name}`;
+            const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/sarina-image/${item.name}`;
             const img = document.createElement('img');
             img.src = publicUrl;
             gallery.appendChild(img);
