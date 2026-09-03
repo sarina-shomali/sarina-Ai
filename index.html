@@ -134,50 +134,46 @@
       <option value="tr">ترکی استانبولی</option>
       <option value="fr">فرانسوی</option>
       <option value="de">آلمانی</option>
-
       <option value="es">اسپانیایی</option>
       <option value="it">ایتالیایی</option>
       <option value="ru">روسی</option>
       <option value="zh-CN">چینی (ساده شده)</option>
       <option value="ja">ژاپنی</option>
-
       <option value="ko">کره‌ای</option>
       <option value="hi">هندی</option>
       <option value="pt">پرتغالی</option>
       <option value="nl">هلندی</option>
       <option value="sv">سوئدی</option>
-
       <option value="el">یونانی</option>
       <option value="pl">لهستانی</option>
       <option value="uk">اوکراینی</option>
       <option value="ro">رومانیایی</option>
       <option value="hu">مجاری</option>
-
       <option value="fi">فنلاندی</option>
       <option value="no">نروژی</option>
       <option value="da">دانمارکی</option>
+
       <option value="cs">چکی</option>
       <option value="th">تایلندی</option>
-
       <option value="vi">ویتنامی</option>
       <option value="id">اندونزیایی</option>
       <option value="ms">مالایی</option>
       <option value="ur">اردو</option>
       <option value="bn">بنگالی</option>
-
       <option value="sw">سواحیلی</option>
       <option value="az">آذربایجانی</option>
-      <option value="hy">ارمنی</option>
 
+      <option value="hy">ارمنی</option>
       <option value="ka">گرجی</option>
       <option value="fil">فیلیپینی</option>
+
       <option value="he">عبری</option>
     </select>
     <button class="action-btn" onclick="translateText()">ترجمه آنلاین</button>
     <h4>نتیجه ترجمه:</h4>
     <div class="result-box" id="resultBoxContainer">
       <button class="tts-btn" onclick="speakTranslation()" title="پخش صوتی">🔊</button>
-      <div id="resultText" style="padding-left: 30px;">نتیجه اینجا نمایش داده می‌شود...</div>
+      <div id="resultText" style="padding-left: 35px;">نتیجه اینجا نمایش داده می‌شود...</div>
     </div>
   </div>
 
@@ -210,12 +206,16 @@
     <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
     
     <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
+    <button class="action-btn" style="background:#607d8b; margin-top:8px;" onclick="changeAdminPassword()">🔑 تغییر رمز عبور مدیر</button>
     
     <div class="gallery" id="galleryGrid"></div>
   </div>
 
   <script>
-    const MY_SECRET_PASS = "123456"; // رمز عبور مدیریت شما
+    // مدیریت رمز عبور با قابلیت ذخیره‌سازی
+    function getStoredPassword() {
+      return localStorage.getItem('app_admin_pass') || "123456";
+    }
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -255,7 +255,46 @@
       grid.appendChild(card);
     });
 
-    /* مترجم آنلاین با پستیبانی چندگانه جهت رفع خطای سرور */
+    /* موتور ترجمه دقیق و بدون مشکل فینگلیش */
+    async function fetchTranslation(text, targetLang) {
+      // 1. Google Translate API
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+        if (res.ok) {
+          const data = await res.json();
+          let translated = '';
+          if (data && data[0]) {
+            data[0].forEach(item => {
+              if (item && item[0]) translated += item[0];
+            });
+          }
+          if (translated.trim()) return translated;
+        }
+      } catch (e) {}
+
+      // 2. Lingva API (Fallback)
+      try {
+        const res = await fetch(`https://lingva.ml/api/v1/auto/${targetLang}/${encodeURIComponent(text)}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.translation) return data.translation;
+        }
+      } catch (e) {}
+
+      // 3. MyMemory API (Fallback 2)
+      try {
+        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${targetLang}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.responseData && data.responseData.translatedText) {
+            return data.responseData.translatedText;
+          }
+        }
+      } catch (e) {}
+
+      throw new Error('Translation failed');
+    }
+
     async function translateText() {
       const text = document.getElementById('sourceText').value;
       const target = document.getElementById('targetLang').value;
@@ -264,28 +303,9 @@
       if (!text.trim()) { resultBox.textContent = 'لطفاً متنی برای ترجمه وارد کنید.'; return; }
       resultBox.textContent = 'در حال ترجمه...';
 
-      // تلاش اول با گوگل ترنسلیت مستقیم
       try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${target}&dt=t&q=${encodeURIComponent(text)}`);
-        if (!res.ok) throw new Error('API 1 Failed');
-        const data = await res.json();
-        let translated = '';
-        data[0].forEach(item => { if (item[0]) translated += item[0]; });
-        resultBox.textContent = translated;
-        return;
-      } catch (e) {
-        console.warn('روش اول ناموفق بود، تلاش با روش دوم...');
-      }
-
-      // تلاش دوم (مترجم جایگزین در صورت قطعی سرور اول)
-      try {
-        const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${target}`);
-        const data2 = await res2.json();
-        if (data2 && data2.responseData && data2.responseData.translatedText) {
-          resultBox.textContent = data2.responseData.translatedText;
-        } else {
-          resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
-        }
+        const result = await fetchTranslation(text, target);
+        resultBox.textContent = result;
       } catch (err) {
         resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
       }
@@ -295,7 +315,7 @@
     function speakTranslation() {
       const text = document.getElementById('resultText').textContent;
       const lang = document.getElementById('targetLang').value;
-      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...') return;
+      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...' || text === 'خطا در ارتباط با سرور ترجمه.') return;
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
@@ -307,7 +327,7 @@
       }
     }
 
-    /* ترجمه پرامپت تصویر */
+    /* ترجمه پرامپت هوش مصنوعی */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
@@ -320,11 +340,8 @@
       if (!prompt.trim()) { enInput.value = ''; return; }
       
       try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-        const data = await res.json();
-        let enPrompt = '';
-        data[0].forEach(item => { if (item[0]) enPrompt += item[0]; });
-        enInput.value = enPrompt;
+        const translated = await fetchTranslation(prompt, 'en');
+        enInput.value = translated;
       } catch (e) {
         enInput.value = prompt;
       }
@@ -366,7 +383,7 @@
         return;
       }
 
-      if (passInput.value !== MY_SECRET_PASS) {
+      if (passInput.value !== getStoredPassword()) {
         alert('رمز عبور اشتباه است! دسترسی غیرمجاز.');
         return;
       }
@@ -398,19 +415,16 @@
       const btnsDiv = document.createElement('div');
       btnsDiv.className = 'card-btns';
 
-      // دکمه دانلود
       const downloadBtn = document.createElement('button');
       downloadBtn.className = 'btn-download';
       downloadBtn.textContent = 'دانلود';
       downloadBtn.onclick = () => downloadImage(url, titleEl.textContent);
 
-      // دکمه تغییر نام
       const renameBtn = document.createElement('button');
       renameBtn.className = 'btn-rename';
       renameBtn.textContent = 'تغییر نام';
       renameBtn.onclick = () => renameImage(titleEl);
 
-      // دکمه حذف
       const deleteBtn = document.createElement('button');
       deleteBtn.className = 'btn-delete';
       deleteBtn.textContent = 'حذف';
@@ -427,7 +441,7 @@
       gallery.appendChild(card);
     }
 
-    /* تابع دانلود تصویر */
+    /* دانلود تصویر */
     async function downloadImage(url, filename) {
       try {
         const response = await fetch(url);
@@ -445,10 +459,10 @@
       }
     }
 
-    /* تابع تغییر نام با رمز عبور */
+    /* تغییر نام با رمز عبور */
     function renameImage(titleElement) {
       const pass = prompt('لطفاً رمز عبور مدیر را وارد کنید:');
-      if (pass !== MY_SECRET_PASS) {
+      if (pass !== getStoredPassword()) {
         alert('رمز عبور اشتباه است!');
         return;
       }
@@ -459,16 +473,32 @@
       }
     }
 
-    /* تابع حذف با رمز عبور */
+    /* حذف با رمز عبور */
     function deleteImage(cardElement) {
       const pass = prompt('لطفاً رمز عبور مدیر را وارد کنید:');
-      if (pass !== MY_SECRET_PASS) {
+      if (pass !== getStoredPassword()) {
         alert('رمز عبور اشتباه است!');
         return;
       }
       if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
         cardElement.remove();
         alert('تصویر حذف شد.');
+      }
+    }
+
+    /* تغییر رمز عبور مدیر */
+    function changeAdminPassword() {
+      const currentPass = prompt('رمز عبور فعلی مدیر را وارد کنید:');
+      if (currentPass !== getStoredPassword()) {
+        alert('رمز عبور فعلی اشتباه است!');
+        return;
+      }
+      const newPass = prompt('رمز عبور جدید را وارد کنید:');
+      if (newPass && newPass.trim() !== '') {
+        localStorage.setItem('app_admin_pass', newPass.trim());
+        alert('رمز عبور مدیر با موفقیت تغییر یافت.');
+      } else {
+        alert('رمز عبور جدید نمی‌تواند خالی باشد.');
       }
     }
   </script>
