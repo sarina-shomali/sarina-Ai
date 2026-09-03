@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>sarina-Ai</title>
   <link rel="manifest" href="manifest.json">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f4f6f9; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
@@ -74,10 +73,10 @@
 
     .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
     .gallery-item { position: relative; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; flex-direction: column; }
-    .gallery-item img { width: 100%; height: 140px; object-fit: cover; }
+    .gallery-item img, .gallery-item video { width: 100%; height: 140px; object-fit: cover; }
     .gallery-title { padding: 6px; font-size: 12px; font-weight: bold; text-align: center; background: #fff; color: #333; border-bottom: 1px solid #eee; word-break: break-word; }
     .gallery-actions { display: flex; justify-content: space-between; padding: 5px; background: rgba(0,0,0,0.7); gap: 3px; }
-    .gallery-actions button { border: none; padding: 5px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; color: white; flex: 1; }
+    .gallery-actions button, .gallery-actions a { border: none; padding: 5px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; color: white; flex: 1; text-align: center; text-decoration: none; }
     .btn-download { background: #2196f3; }
     .btn-edit { background: #ff9800; }
     .btn-delete { background: #f44336; }
@@ -102,7 +101,7 @@
     <button id="btn-game" class="active" onclick="switchTab('game')">🎮 بازی</button>
     <button id="btn-trans" onclick="switchTab('trans')">🌐 مترجم</button>
     <button id="btn-ai" onclick="switchTab('ai')">🎨 ساخت تصویر</button>
-    <button id="btn-upload" onclick="switchTab('upload')">📸 گالری عکس</button>
+    <button id="btn-upload" onclick="switchTab('upload')">📸 گالری جهانی</button>
   </div>
 
   <div id="tab-game" class="tab-content active">
@@ -146,18 +145,18 @@
   </div>
 
   <div id="tab-upload" class="tab-content">
-    <h3 style="margin-top:0; text-align:center;">آپلود لینک مستقیم عکس 📸</h3>
+    <h3 style="margin-top:0; text-align:center;">افزودن لینک به گالری جهانی 🌐</h3>
     
-    <label>لینک مستقیم تصویر (URL):</label>
-    <input type="text" id="directImageUrl" placeholder="https://example.com/image.jpg" dir="ltr">
+    <label>لینک مستقیم عکس یا فیلم (URL):</label>
+    <input type="text" id="directImageUrl" placeholder="https://example.com/file.jpg یا .mp4" dir="ltr">
     
-    <label style="margin-top:8px; display:block;">نام / عنوان عکس:</label>
-    <input type="text" id="imageTitle" placeholder="عنوان یا نام عکس را بنویسید">
+    <label style="margin-top:8px; display:block;">نام / عنوان رسانه:</label>
+    <input type="text" id="imageTitle" placeholder="عنوان یا نام را بنویسید">
 
     <label style="margin-top:8px; display:block;">رمز عبور مدیر:</label>
     <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
     
-    <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری جهانی</button>
+    <button class="action-btn" style="background:#4caf50;" onclick="addMediaGlobal()">ارسال به گالری جهانی</button>
     
     <div class="pass-box">
       <h5 style="margin: 0 0 8px 0;">🔑 تغییر رمز عبور مدیر:</h5>
@@ -169,10 +168,17 @@
     <div class="gallery" id="galleryGrid"></div>
   </div>
 
+  <!-- اتصال به دیتابیس جهانی پایداری بدون نیاز به سوپابیس -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
   <script>
-    const SUPABASE_URL = "https://eovdcgxqguyotjulivin.supabase.co";
-    const SUPABASE_KEY = "sb_publishable_LSLgAAC_7LzcbYdlaUw9vA_4GLMlvqK";
-    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // تنظیمات دیتابیس آنلاین عمومی
+    const firebaseConfig = {
+      databaseURL: "https://sarina-ai-default-rtdb.firebaseio.com"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -181,6 +187,7 @@
       document.getElementById('btn-' + tab).classList.add('active');
     }
 
+    /* بازی */
     const icons = ['🐶', '🐱', '🐭', '🐹', '🐶', '🐱', '🐭', '🐹'];
     let flipped = [], matched = 0;
     icons.sort(() => 0.5 - Math.random());
@@ -211,6 +218,7 @@
       grid.appendChild(card);
     });
 
+    /* ترجمه */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
@@ -280,41 +288,85 @@
       img.onerror = () => { status.textContent = 'خطا در بارگذاری تصویر.'; };
     }
 
+    /* دریافت زنده و همزمان گالری جهانی */
     let currentAdminPass = localStorage.getItem('admin_pass') || "123456";
 
-    window.addEventListener('DOMContentLoaded', () => {
-      fetchGlobalGallery();
-    });
-
-    async function fetchGlobalGallery() {
+    database.ref('gallery').on('value', (snapshot) => {
       const gallery = document.getElementById('galleryGrid');
-      gallery.innerHTML = 'در حال بارگذاری...';
-
-      const { data, error } = await supabaseClient
-        .from('gallery')
-        .select('*')
-        .order('id', { ascending: false });
-
-      if (error) {
-        gallery.innerHTML = 'خطا در اتصال به سوپابیس.';
+      gallery.innerHTML = '';
+      const data = snapshot.val();
+      
+      if (!data) {
+        gallery.innerHTML = '<div style="grid-column: 1 / -1; text-align:center; color:#888; padding:20px;">هنوز فایلی در گالری جهانی ثبت نشده است.</div>';
         return;
       }
 
-      gallery.innerHTML = '';
-      data.forEach((item) => {
+      const keys = Object.keys(data).reverse();
+      keys.forEach((key) => {
+        const item = data[key];
         const itemContainer = document.createElement('div');
         itemContainer.className = 'gallery-item';
+        
+        const isVideo = item.url.match(/\.(mp4|webm|ogg)$/i) || item.url.includes('video');
+        const mediaHtml = isVideo 
+          ? `<video src="${item.url}" controls></video>`
+          : `<img src="${item.url}" alt="Media">`;
+
         itemContainer.innerHTML = `
-          <img src="${item.image_url}" alt="Uploaded photo">
+          ${mediaHtml}
           <div class="gallery-title">${item.title || 'بدون عنوان'}</div>
           <div class="gallery-actions">
-            <button class="btn-download" onclick="downloadImage('${item.image_url}')">📥 دانلود</button>
-            <button class="btn-edit" onclick="editImageTitle(${item.id}, '${item.title || ''}')">✏️ ویرایش نام</button>
-            <button class="btn-delete" onclick="deleteImage(${item.id})">🗑 حذف</button>
+            <a href="${item.url}" target="_blank" download class="btn-download">📥 دانلود</a>
+            <button class="btn-edit" onclick="editTitleGlobal('${key}', '${item.title}')">✏️ نام</button>
+            <button class="btn-delete" onclick="deleteMediaGlobal('${key}')">🗑 حذف</button>
           </div>
         `;
         gallery.appendChild(itemContainer);
       });
+    });
+
+    function addMediaGlobal() {
+      const urlInput = document.getElementById('directImageUrl');
+      const titleInput = document.getElementById('imageTitle');
+      const passInput = document.getElementById('adminPassword');
+
+      if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم را وارد کنید.'); return; }
+      if (passInput.value !== currentAdminPass) { alert('رمز عبور اشتباه است!'); return; }
+
+      const mediaUrl = urlInput.value.trim();
+      const mediaTitle = titleInput.value.trim() || 'فایل جدید';
+
+      database.ref('gallery').push({
+        url: mediaUrl,
+        title: mediaTitle,
+        timestamp: Date.now()
+      });
+
+      urlInput.value = '';
+      titleInput.value = '';
+      passInput.value = '';
+      alert('موفقیت‌آمیز بود! عکس در تمام دنیای آنلاین ثبت شد.');
+    }
+
+    function editTitleGlobal(key, oldTitle) {
+      const pass = prompt('رمز عبور مدیر را وارد کنید:');
+      if (pass === currentAdminPass) {
+        const newTitle = prompt('نام جدید را وارد کنید:', oldTitle);
+        if (newTitle !== null) {
+          database.ref('gallery/' + key).update({ title: newTitle.trim() });
+        }
+      } else if (pass !== null) {
+        alert('رمز عبور اشتباه است!');
+      }
+    }
+
+    function deleteMediaGlobal(key) {
+      const pass = prompt('رمز عبور مدیر را وارد کنید:');
+      if (pass === currentAdminPass) {
+        database.ref('gallery/' + key).remove();
+      } else if (pass !== null) {
+        alert('رمز عبور اشتباه است!');
+      }
     }
 
     function changeAdminPassword() {
@@ -329,83 +381,6 @@
       document.getElementById('oldPassword').value = '';
       document.getElementById('newPassword').value = '';
       alert('رمز عبور تغییر یافت!');
-    }
-
-    async function addDirectImage() {
-      const urlInput = document.getElementById('directImageUrl');
-      const titleInput = document.getElementById('imageTitle');
-      const passInput = document.getElementById('adminPassword');
-
-      if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم تصویر را وارد کنید.'); return; }
-      if (passInput.value !== currentAdminPass) { alert('رمز عبور اشتباه است!'); return; }
-
-      const imgUrl = urlInput.value.trim();
-      const imgTitle = titleInput.value.trim() || 'عکس جدید';
-
-      const { error } = await supabaseClient
-        .from('gallery')
-        .insert([{ image_url: imgUrl, title: imgTitle }]);
-
-      if (error) {
-        alert('خطا در ذخیره تصویر در سوپابیس!');
-      } else {
-        urlInput.value = '';
-        titleInput.value = '';
-        passInput.value = '';
-        fetchGlobalGallery();
-        alert('تصویر به گالری جهانی اضافه شد!');
-      }
-    }
-
-    async function editImageTitle(id, currentTitle) {
-      const pass = prompt('برای تغییر نام عکس، رمز عبور مدیر را وارد کنید:');
-      if (pass === currentAdminPass) {
-        const newTitle = prompt('نام جدید عکس را وارد کنید:', currentTitle);
-        if (newTitle !== null) {
-          const { error } = await supabaseClient
-            .from('gallery')
-            .update({ title: newTitle.trim() })
-            .eq('id', id);
-
-          if (error) {
-            alert('خطا در تغییر نام عکس!');
-          } else {
-            fetchGlobalGallery();
-            alert('نام عکس به روز شد.');
-          }
-        }
-      } else if (pass !== null) {
-        alert('رمز عبور اشتباه است!');
-      }
-    }
-
-    async function deleteImage(id) {
-      const pass = prompt('جهت حذف عکس از گالری، رمز عبور مدیر را وارد کنید:');
-      if (pass === currentAdminPass) {
-        const { error } = await supabaseClient
-          .from('gallery')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          alert('خطا در حذف عکس!');
-        } else {
-          fetchGlobalGallery();
-          alert('عکس حذف شد.');
-        }
-      } else if (pass !== null) {
-        alert('رمز عبور اشتباه است!');
-      }
-    }
-
-    function downloadImage(url) {
-      const a = document.createElement('a');
-      a.href = url;
-      a.target = '_blank';
-      a.download = 'image.jpg';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
     }
   </script>
 </body>
