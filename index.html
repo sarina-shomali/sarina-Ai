@@ -71,9 +71,17 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
 
+    /* استایل گالری با دکمه‌های دانلود و حذف */
     .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-    .gallery img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
+    .gallery-item { position: relative; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; flex-direction: column; }
+    .gallery-item img { width: 100%; height: 140px; object-fit: cover; }
+    .gallery-actions { display: flex; justify-content: space-between; padding: 5px; background: rgba(0,0,0,0.6); }
+    .gallery-actions button { border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; color: white; }
+    .btn-download { background: #2196f3; }
+    .btn-delete { background: #f44336; }
+
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
+    .pass-box { background: #eef2f5; padding: 10px; border-radius: 8px; margin-top: 15px; }
   </style>
 </head>
 <body>
@@ -146,6 +154,13 @@
     
     <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
     
+    <div class="pass-box">
+      <h5 style="margin: 0 0 8px 0;">🔑 تغییر رمز عبور مدیر:</h5>
+      <input type="password" id="oldPassword" placeholder="رمز عبور فعلی">
+      <input type="password" id="newPassword" placeholder="رمز عبور جدید">
+      <button class="action-btn" style="background:#009688; margin-top:8px; padding:8px;" onclick="changeAdminPassword()">تغییر رمز عبور</button>
+    </div>
+
     <div class="gallery" id="galleryGrid"></div>
   </div>
 
@@ -188,7 +203,7 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه بدون فینگلیش و کاملاً اصلاح شده */
+    /* موتور ترجمه بدون فینگلیش */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
@@ -205,7 +220,6 @@
           });
         }
         
-        // اگر نتیجه دقیقاً شامل عبارت فینگلیش Kitab بود آن را به ترجمه واقعی Book اصلاح می‌کند
         if (translatedText.toLowerCase().includes('kitab')) {
           translatedText = translatedText.replace(/kitab/gi, 'Book');
         }
@@ -243,7 +257,7 @@
       }
     }
 
-    /* ترجمه کاملاً خودکار پرامپت ساخت تصویر هنگام تایپ */
+    /* ترجمه خودکار ساخت تصویر */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
@@ -257,7 +271,7 @@
       }, 400);
     }
 
-    /* ساخت تصویر همراه با ترجمه اتوماتیک در لحظه */
+    /* ساخت تصویر */
     async function generateImage() {
       const promptFa = document.getElementById('aiPrompt').value;
       let enPrompt = document.getElementById('aiPromptEn').value;
@@ -269,7 +283,6 @@
       status.textContent = 'در حال ترجمه خودکار و ساخت تصویر... لطفاً صبر کنید.';
       img.style.display = 'none';
 
-      // ترجمه خودکار در صورتی که قبل از تایپ کامل، روی دکمه کلیک شده باشد
       if (promptFa.trim() && !enPrompt.trim()) {
         enPrompt = await fetchTranslation(promptFa, 'en');
         document.getElementById('aiPromptEn').value = enPrompt;
@@ -288,8 +301,28 @@
       };
     }
 
-    /* افزوده به گالری عکس */
-    const MY_SECRET_PASS = "123456";
+    /* مدیریت رمز عبور و گالری عکس */
+    let currentAdminPass = localStorage.getItem('admin_pass') || "123456";
+
+    function changeAdminPassword() {
+      const oldPass = document.getElementById('oldPassword').value;
+      const newPass = document.getElementById('newPassword').value;
+
+      if (oldPass !== currentAdminPass) {
+        alert('رمز عبور فعلی اشتباه است!');
+        return;
+      }
+      if (!newPass.trim()) {
+        alert('لطفاً رمز عبور جدید را وارد کنید.');
+        return;
+      }
+
+      currentAdminPass = newPass.trim();
+      localStorage.setItem('admin_pass', currentAdminPass);
+      document.getElementById('oldPassword').value = '';
+      document.getElementById('newPassword').value = '';
+      alert('رمز عبور با موفقیت تغییر یافت!');
+    }
 
     function addDirectImage() {
       const urlInput = document.getElementById('directImageUrl');
@@ -297,15 +330,46 @@
       const gallery = document.getElementById('galleryGrid');
 
       if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم تصویر را وارد کنید.'); return; }
-      if (passInput.value !== MY_SECRET_PASS) { alert('رمز عبور اشتباه است!'); return; }
+      if (passInput.value !== currentAdminPass) { alert('رمز عبور اشتباه است!'); return; }
 
-      const img = document.createElement('img');
-      img.src = urlInput.value.trim();
-      gallery.appendChild(img);
+      const imgUrl = urlInput.value.trim();
+
+      const itemContainer = document.createElement('div');
+      itemContainer.className = 'gallery-item';
+
+      itemContainer.innerHTML = `
+        <img src="${imgUrl}" alt="Uploaded photo">
+        <div class="gallery-actions">
+          <button class="btn-download" onclick="downloadImage('${imgUrl}')">📥 دانلود</button>
+          <button class="btn-delete" onclick="deleteImage(this)">🗑 حذف</button>
+        </div>
+      `;
+
+      gallery.appendChild(itemContainer);
 
       urlInput.value = '';
       passInput.value = '';
       alert('تصویر با موفقیت اضافه شد!');
+    }
+
+    function deleteImage(btn) {
+      const pass = prompt('جهت حذف عکس، رمز عبور مدیر را وارد کنید:');
+      if (pass === currentAdminPass) {
+        btn.closest('.gallery-item').remove();
+        alert('عکس حذف شد.');
+      } else if (pass !== null) {
+        alert('رمز عبور اشتباه است!');
+      }
+    }
+
+    function downloadImage(url) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.download = 'image.jpg';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     }
   </script>
 </body>
