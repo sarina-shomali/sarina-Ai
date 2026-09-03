@@ -60,7 +60,7 @@
     .card.flipped { background: #fff; border: 2px solid #2196f3; }
     
     /* ورودی‌ها و دکمه‌ها */
-    textarea, input[type="text"] { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 8px; }
+    textarea, input[type="text"], input[type="password"] { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 8px; }
     textarea { height: 80px; resize: none; }
     select, .action-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
     .action-btn { background: #ff9800; color: white; border: none; cursor: pointer; }
@@ -74,12 +74,8 @@
 </head>
 <body>
 
-  <!-- هدر بالای صفحه -->
   <div class="top-bar">
-    <!-- عکس پروفایل سمت راست -->
     <img src="https://lh3.googleusercontent.com/d/1y-npJ0RAY2mvE_ER6fXLXKv7WchFHPeJ" class="user-avatar" alt="User Avatar">
-    
-    <!-- لینک کانال یوتیوب سمت چپ -->
     <a href="https://www.youtube.com/@naturescenic2" target="_blank" class="youtube-link">
       <span>طبیعت ایران naturescenic2</span>
       <img src="https://lh3.googleusercontent.com/d/1EZf35v8476qtDC_rTS_h-6-_zIq0RNTh" class="youtube-logo" alt="YouTube">
@@ -88,7 +84,6 @@
 
   <div class="header">sarina-Ai 🚀</div>
 
-  <!-- منوی تب‌ها -->
   <div class="nav">
     <button id="btn-game" class="active" onclick="switchTab('game')">🎮 بازی</button>
     <button id="btn-trans" onclick="switchTab('trans')">🌐 مترجم</button>
@@ -96,13 +91,11 @@
     <button id="btn-upload" onclick="switchTab('upload')">📸 گالری عکس</button>
   </div>
 
-  <!-- تب بازی -->
   <div id="tab-game" class="tab-content active">
     <h3 style="margin-top:0; text-align:center;">بازی حافظه 🎈</h3>
     <div class="grid" id="grid"></div>
   </div>
 
-  <!-- تب مترجم -->
   <div id="tab-trans" class="tab-content">
     <h3 style="margin-top:0; text-align:center;">مترجم آنلاین گوگل</h3>
     <label>متن (فارسی یا هر زبانی):</label>
@@ -122,20 +115,32 @@
     <div class="result-box" id="resultText">نتیجه اینجا نمایش داده می‌شود...</div>
   </div>
 
-  <!-- تب ساخت تصویر با هوش مصنوعی -->
   <div id="tab-ai" class="tab-content">
     <h3 style="margin-top:0; text-align:center;">مولد تصویر هوشمند 🎨</h3>
-    <label>توصیف تصویر به فارسی یا انگلیسی:</label>
-    <input type="text" id="aiPrompt" placeholder="مثلاً: یک کلبه چوبی زیبا در جنگل‌های شمال ایران">
+    <label>توصیف تصویر به فارسی:</label>
+    <input type="text" id="aiPrompt" placeholder="مثلاً: یک کلبه چوبی زیبا در جنگل‌های شمال ایران" oninput="autoTranslatePrompt()">
+    
+    <button class="action-btn" style="background:#2196f3; margin-top:8px;" onclick="manualTranslatePrompt()">🌐 ترجمه دستی با گوگل ترنسلیت</button>
+    
+    <label style="margin-top:10px; display:block; font-size:12px; color:#555;">ترجمه انگلیسی (جهت ارسال به AI):</label>
+    <input type="text" id="aiPromptEn" placeholder="ترجمه انگلیسی هم‌زمان اینجا دیده می‌شود..." style="background:#f9f9f9; font-size:13px; color:#333;" dir="ltr">
+    
     <button class="action-btn" style="background:#9c27b0;" onclick="generateImage()">ساخت تصویر با AI</button>
     <div id="aiStatus" style="margin-top:10px; text-align:center; font-size:14px; color:#666;"></div>
     <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image">
   </div>
 
-  <!-- تب آپلود و گالری عکس -->
   <div id="tab-upload" class="tab-content">
-    <h3 style="margin-top:0; text-align:center;">آپلود و اشتراک عکس 📸</h3>
-    <input type="file" id="imageInput" accept="image/*" onchange="previewAndSaveImage()">
+    <h3 style="margin-top:0; text-align:center;">آپلود لینک مستقیم عکس 📸</h3>
+    
+    <label>لینک مستقیم تصویر (URL):</label>
+    <input type="text" id="directImageUrl" placeholder="https://example.com/image.jpg" dir="ltr">
+    
+    <label style="margin-top:10px; display:block;">رمز عبور مدیر:</label>
+    <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
+    
+    <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
+    
     <div class="gallery" id="galleryGrid"></div>
   </div>
 
@@ -196,26 +201,45 @@
       }
     }
 
+    /* ترجمه خودکار و دستی پرامپت هوش مصنوعی */
+    let translateTimer;
+    function autoTranslatePrompt() {
+      clearTimeout(translateTimer);
+      translateTimer = setTimeout(manualTranslatePrompt, 600);
+    }
+
+    async function manualTranslatePrompt() {
+      const prompt = document.getElementById('aiPrompt').value;
+      const enInput = document.getElementById('aiPromptEn');
+      if (!prompt.trim()) { enInput.value = ''; return; }
+      
+      try {
+        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
+        const data = await res.json();
+        let enPrompt = '';
+        data[0].forEach(item => { if (item[0]) enPrompt += item[0]; });
+        enInput.value = enPrompt;
+      } catch (e) {
+        enInput.value = prompt; // در صورت خطا همان متن باقی بماند
+      }
+    }
+
     /* ساخت تصویر با هوش مصنوعی */
     async function generateImage() {
-      const prompt = document.getElementById('aiPrompt').value;
+      let enPrompt = document.getElementById('aiPromptEn').value;
+      const promptFa = document.getElementById('aiPrompt').value;
       const status = document.getElementById('aiStatus');
       const img = document.getElementById('aiResultImg');
       
-      if (!prompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
+      if (!promptFa.trim() && !enPrompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
       
+      if (!enPrompt.trim()) enPrompt = promptFa;
+
       status.textContent = 'در حال ساخت تصویر با هوش مصنوعی... لطفاً چند ثانیه صبر کنید.';
       img.style.display = 'none';
 
       try {
-        // ترجمه خودکار به انگلیسی برای کیفیت بیشتر در AI
-        const transRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=${encodeURIComponent(prompt)}`);
-        const transData = await transRes.json();
-        let enPrompt = '';
-        transData[0].forEach(item => { if (item[0]) enPrompt += item[0]; });
-
         const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true`;
-        
         img.src = imageUrl;
         img.onload = () => {
           status.textContent = '';
@@ -226,19 +250,32 @@
       }
     }
 
-    /* آپلود و ذخیره عکس */
-    function previewAndSaveImage() {
-      const fileInput = document.getElementById('imageInput');
+    /* افزودن تصویر با لینک مستقیم و رمز عبور */
+    const MY_SECRET_PASS = "123456"; // رمز عبور دلخواه شما
+
+    function addDirectImage() {
+      const urlInput = document.getElementById('directImageUrl');
+      const passInput = document.getElementById('adminPassword');
       const gallery = document.getElementById('galleryGrid');
-      if (fileInput.files && fileInput.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          gallery.appendChild(img);
-        };
-        reader.readAsDataURL(fileInput.files[0]);
+
+      if (!urlInput.value.trim()) {
+        alert('لطفاً لینک مستقیم تصویر را وارد کنید.');
+        return;
       }
+
+      if (passInput.value !== MY_SECRET_PASS) {
+        alert('رمز عبور اشتباه است! دسترسی غیرمجاز.');
+        return;
+      }
+
+      const img = document.createElement('img');
+      img.src = urlInput.value.trim();
+      img.onerror = () => alert('لینک وارد شده نامعتبر است یا تصویر بارگذاری نشد.');
+      gallery.appendChild(img);
+
+      urlInput.value = '';
+      passInput.value = '';
+      alert('تصویر با موفقیت اضافه شد!');
     }
   </script>
 </body>
