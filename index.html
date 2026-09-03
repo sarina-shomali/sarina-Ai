@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>sarina-Ai</title>
   <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f4f6f9; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
@@ -71,13 +72,14 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
 
-    /* استایل گالری با دکمه‌های دانلود و حذف */
     .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
     .gallery-item { position: relative; border-radius: 8px; overflow: hidden; background: #f0f0f0; display: flex; flex-direction: column; }
     .gallery-item img { width: 100%; height: 140px; object-fit: cover; }
-    .gallery-actions { display: flex; justify-content: space-between; padding: 5px; background: rgba(0,0,0,0.6); }
-    .gallery-actions button { border: none; padding: 6px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; cursor: pointer; color: white; }
+    .gallery-title { padding: 6px; font-size: 12px; font-weight: bold; text-align: center; background: #fff; color: #333; border-bottom: 1px solid #eee; word-break: break-word; }
+    .gallery-actions { display: flex; justify-content: space-between; padding: 5px; background: rgba(0,0,0,0.7); gap: 3px; }
+    .gallery-actions button { border: none; padding: 5px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; cursor: pointer; color: white; flex: 1; }
     .btn-download { background: #2196f3; }
+    .btn-edit { background: #ff9800; }
     .btn-delete { background: #f44336; }
 
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
@@ -149,10 +151,13 @@
     <label>لینک مستقیم تصویر (URL):</label>
     <input type="text" id="directImageUrl" placeholder="https://example.com/image.jpg" dir="ltr">
     
-    <label style="margin-top:10px; display:block;">رمز عبور مدیر:</label>
+    <label style="margin-top:8px; display:block;">نام / عنوان عکس:</label>
+    <input type="text" id="imageTitle" placeholder="عنوان یا نام عکس را بنویسید">
+
+    <label style="margin-top:8px; display:block;">رمز عبور مدیر:</label>
     <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
     
-    <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
+    <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری جهانی</button>
     
     <div class="pass-box">
       <h5 style="margin: 0 0 8px 0;">🔑 تغییر رمز عبور مدیر:</h5>
@@ -165,6 +170,10 @@
   </div>
 
   <script>
+    const SUPABASE_URL = "https://eovdcgxqguyotjulivin.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_LSLgAAC_7LzcbYdlaUw9vA_4GLMlvqK";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav button').forEach(el => el.classList.remove('active'));
@@ -172,7 +181,6 @@
       document.getElementById('btn-' + tab).classList.add('active');
     }
 
-    /* بازی */
     const icons = ['🐶', '🐱', '🐭', '🐹', '🐶', '🐱', '🐭', '🐹'];
     let flipped = [], matched = 0;
     icons.sort(() => 0.5 - Math.random());
@@ -203,52 +211,36 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه بدون فینگلیش */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
         const res = await fetch(url);
         const data = await res.json();
-        
         let translatedText = '';
         if (data && data[0] && Array.isArray(data[0])) {
-          data[0].forEach(item => {
-            if (item && item[0]) {
-              translatedText += item[0];
-            }
-          });
+          data[0].forEach(item => { if (item && item[0]) translatedText += item[0]; });
         }
-        
-        if (translatedText.toLowerCase().includes('kitab')) {
-          translatedText = translatedText.replace(/kitab/gi, 'Book');
-        }
-        
         return translatedText || text;
       } catch (err) {
         return text;
       }
     }
 
-    /* بخش ترجمه متن */
     async function translateText() {
       const text = document.getElementById('sourceText').value;
       const target = document.getElementById('targetLang').value;
       const resultBox = document.getElementById('resultText');
-      
       if (!text.trim()) { resultBox.textContent = 'لطفاً متنی برای ترجمه وارد کنید.'; return; }
       resultBox.textContent = 'در حال ترجمه...';
-      
       const translated = await fetchTranslation(text, target);
       resultBox.textContent = translated || 'خطا در دریافت ترجمه.';
     }
 
-    /* پخش صوتی ترجمه */
     function speakTranslation() {
       const text = document.getElementById('resultText').textContent;
       const lang = document.getElementById('targetLang').value;
-      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...') return;
-
+      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...') return;
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
@@ -257,7 +249,6 @@
       }
     }
 
-    /* ترجمه خودکار ساخت تصویر */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
@@ -265,98 +256,143 @@
         const prompt = document.getElementById('aiPrompt').value;
         const enInput = document.getElementById('aiPromptEn');
         if (!prompt.trim()) { enInput.value = ''; return; }
-        
         const translated = await fetchTranslation(prompt, 'en');
         if (translated) enInput.value = translated;
       }, 400);
     }
 
-    /* ساخت تصویر */
     async function generateImage() {
       const promptFa = document.getElementById('aiPrompt').value;
       let enPrompt = document.getElementById('aiPromptEn').value;
       const status = document.getElementById('aiStatus');
       const img = document.getElementById('aiResultImg');
-      
       if (!promptFa.trim() && !enPrompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
-      
-      status.textContent = 'در حال ترجمه خودکار و ساخت تصویر... لطفاً صبر کنید.';
+      status.textContent = 'در حال ساخت تصویر... لطفاً صبر کنید.';
       img.style.display = 'none';
-
       if (promptFa.trim() && !enPrompt.trim()) {
         enPrompt = await fetchTranslation(promptFa, 'en');
         document.getElementById('aiPromptEn').value = enPrompt;
       }
-
       if (!enPrompt.trim()) enPrompt = promptFa;
-
       const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true`;
       img.src = imageUrl;
-      img.onload = () => {
-        status.textContent = '';
-        img.style.display = 'block';
-      };
-      img.onerror = () => {
-        status.textContent = 'خطا در بارگذاری تصویر.';
-      };
+      img.onload = () => { status.textContent = ''; img.style.display = 'block'; };
+      img.onerror = () => { status.textContent = 'خطا در بارگذاری تصویر.'; };
     }
 
-    /* مدیریت رمز عبور و گالری عکس */
     let currentAdminPass = localStorage.getItem('admin_pass') || "123456";
+
+    window.addEventListener('DOMContentLoaded', () => {
+      fetchGlobalGallery();
+    });
+
+    async function fetchGlobalGallery() {
+      const gallery = document.getElementById('galleryGrid');
+      gallery.innerHTML = 'در حال بارگذاری...';
+
+      const { data, error } = await supabaseClient
+        .from('gallery')
+        .select('*')
+        .order('id', { ascending: false });
+
+      if (error) {
+        gallery.innerHTML = 'خطا در اتصال به سوپابیس.';
+        return;
+      }
+
+      gallery.innerHTML = '';
+      data.forEach((item) => {
+        const itemContainer = document.createElement('div');
+        itemContainer.className = 'gallery-item';
+        itemContainer.innerHTML = `
+          <img src="${item.image_url}" alt="Uploaded photo">
+          <div class="gallery-title">${item.title || 'بدون عنوان'}</div>
+          <div class="gallery-actions">
+            <button class="btn-download" onclick="downloadImage('${item.image_url}')">📥 دانلود</button>
+            <button class="btn-edit" onclick="editImageTitle(${item.id}, '${item.title || ''}')">✏️ ویرایش نام</button>
+            <button class="btn-delete" onclick="deleteImage(${item.id})">🗑 حذف</button>
+          </div>
+        `;
+        gallery.appendChild(itemContainer);
+      });
+    }
 
     function changeAdminPassword() {
       const oldPass = document.getElementById('oldPassword').value;
       const newPass = document.getElementById('newPassword').value;
 
-      if (oldPass !== currentAdminPass) {
-        alert('رمز عبور فعلی اشتباه است!');
-        return;
-      }
-      if (!newPass.trim()) {
-        alert('لطفاً رمز عبور جدید را وارد کنید.');
-        return;
-      }
+      if (oldPass !== currentAdminPass) { alert('رمز عبور فعلی اشتباه است!'); return; }
+      if (!newPass.trim()) { alert('لطفاً رمز جدید را وارد کنید.'); return; }
 
       currentAdminPass = newPass.trim();
       localStorage.setItem('admin_pass', currentAdminPass);
       document.getElementById('oldPassword').value = '';
       document.getElementById('newPassword').value = '';
-      alert('رمز عبور با موفقیت تغییر یافت!');
+      alert('رمز عبور تغییر یافت!');
     }
 
-    function addDirectImage() {
+    async function addDirectImage() {
       const urlInput = document.getElementById('directImageUrl');
+      const titleInput = document.getElementById('imageTitle');
       const passInput = document.getElementById('adminPassword');
-      const gallery = document.getElementById('galleryGrid');
 
       if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم تصویر را وارد کنید.'); return; }
       if (passInput.value !== currentAdminPass) { alert('رمز عبور اشتباه است!'); return; }
 
       const imgUrl = urlInput.value.trim();
+      const imgTitle = titleInput.value.trim() || 'عکس جدید';
 
-      const itemContainer = document.createElement('div');
-      itemContainer.className = 'gallery-item';
+      const { error } = await supabaseClient
+        .from('gallery')
+        .insert([{ image_url: imgUrl, title: imgTitle }]);
 
-      itemContainer.innerHTML = `
-        <img src="${imgUrl}" alt="Uploaded photo">
-        <div class="gallery-actions">
-          <button class="btn-download" onclick="downloadImage('${imgUrl}')">📥 دانلود</button>
-          <button class="btn-delete" onclick="deleteImage(this)">🗑 حذف</button>
-        </div>
-      `;
-
-      gallery.appendChild(itemContainer);
-
-      urlInput.value = '';
-      passInput.value = '';
-      alert('تصویر با موفقیت اضافه شد!');
+      if (error) {
+        alert('خطا در ذخیره تصویر در سوپابیس!');
+      } else {
+        urlInput.value = '';
+        titleInput.value = '';
+        passInput.value = '';
+        fetchGlobalGallery();
+        alert('تصویر به گالری جهانی اضافه شد!');
+      }
     }
 
-    function deleteImage(btn) {
-      const pass = prompt('جهت حذف عکس، رمز عبور مدیر را وارد کنید:');
+    async function editImageTitle(id, currentTitle) {
+      const pass = prompt('برای تغییر نام عکس، رمز عبور مدیر را وارد کنید:');
       if (pass === currentAdminPass) {
-        btn.closest('.gallery-item').remove();
-        alert('عکس حذف شد.');
+        const newTitle = prompt('نام جدید عکس را وارد کنید:', currentTitle);
+        if (newTitle !== null) {
+          const { error } = await supabaseClient
+            .from('gallery')
+            .update({ title: newTitle.trim() })
+            .eq('id', id);
+
+          if (error) {
+            alert('خطا در تغییر نام عکس!');
+          } else {
+            fetchGlobalGallery();
+            alert('نام عکس به روز شد.');
+          }
+        }
+      } else if (pass !== null) {
+        alert('رمز عبور اشتباه است!');
+      }
+    }
+
+    async function deleteImage(id) {
+      const pass = prompt('جهت حذف عکس از گالری، رمز عبور مدیر را وارد کنید:');
+      if (pass === currentAdminPass) {
+        const { error } = await supabaseClient
+          .from('gallery')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          alert('خطا در حذف عکس!');
+        } else {
+          fetchGlobalGallery();
+          alert('عکس حذف شد.');
+        }
       } else if (pass !== null) {
         alert('رمز عبور اشتباه است!');
       }
