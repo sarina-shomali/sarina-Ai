@@ -9,7 +9,6 @@
     * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
     body { background-color: #f4f6f9; margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; }
     
-    /* هدر بالای صفحه */
     .top-bar {
       width: 100%;
       max-width: 500px;
@@ -22,31 +21,12 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       margin-bottom: 15px;
     }
-    .user-avatar {
-      width: 45px;
-      height: 45px;
-      border-radius: 50%;
-      object-fit: cover;
-      border: 2px solid #4caf50;
-    }
-    .youtube-link {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      text-decoration: none;
-      color: #333;
-      font-weight: bold;
-      font-size: 13px;
-    }
-    .youtube-logo {
-      width: 32px;
-      height: 32px;
-      object-fit: contain;
-    }
+    .user-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid #4caf50; }
+    .youtube-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: #333; font-weight: bold; font-size: 13px; }
+    .youtube-logo { width: 32px; height: 32px; object-fit: contain; }
 
     .header { font-size: 24px; font-weight: bold; color: #2c3e50; margin-bottom: 15px; }
     
-    /* منوی تب‌ها */
     .nav { display: flex; gap: 6px; margin-bottom: 20px; width: 100%; max-width: 500px; flex-wrap: wrap; }
     .nav button { flex: 1; min-width: 100px; padding: 10px 5px; border: none; background: #e0e0e0; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
     .nav button.active { background: #4caf50; color: white; }
@@ -54,12 +34,10 @@
     .tab-content { display: none; width: 100%; max-width: 500px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
     .tab-content.active { display: block; }
     
-    /* بازی */
     .grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 15px; }
     .card { aspect-ratio: 1; background: #2196f3; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; color: white; }
     .card.flipped { background: #fff; border: 2px solid #2196f3; }
     
-    /* ورودی‌ها و دکمه‌ها */
     textarea, input[type="text"], input[type="password"] { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 8px; }
     textarea { height: 80px; resize: none; }
     select, .action-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
@@ -93,7 +71,6 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
 
-    /* گالری تصاویر */
     .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
     .gallery img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
@@ -150,10 +127,8 @@
     <label>توصیف تصویر به فارسی:</label>
     <input type="text" id="aiPrompt" placeholder="مثلاً: یک کلبه چوبی زیبا در جنگل‌های شمال ایران" onkeydown="if(event.key==='Enter') generateImage()" oninput="autoTranslatePrompt()">
     
-    <button class="action-btn" style="background:#2196f3; margin-top:8px;" onclick="manualTranslatePrompt()">🌐 ترجمه دستی پرامپت</button>
-    
-    <label style="margin-top:10px; display:block; font-size:12px; color:#555;">ترجمه انگلیسی (جهت ارسال به AI):</label>
-    <input type="text" id="aiPromptEn" placeholder="ترجمه انگلیسی هم‌زمان اینجا دیده می‌شود..." style="background:#f9f9f9; font-size:13px; color:#333;" dir="ltr">
+    <label style="margin-top:10px; display:block; font-size:12px; color:#555;">ترجمه انگلیسی (خودکار انجام می‌شود):</label>
+    <input type="text" id="aiPromptEn" placeholder="ترجمه انگلیسی اتوماتیک در این کادر ظاهر می‌شود..." style="background:#f9f9f9; font-size:13px; color:#333;" dir="ltr">
     
     <button class="action-btn" style="background:#9c27b0;" onclick="generateImage()">ساخت تصویر با AI</button>
     <div id="aiStatus" style="margin-top:10px; text-align:center; font-size:14px; color:#666;"></div>
@@ -213,7 +188,7 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه کاملاً بدون محدودیت و ۱۰۰٪ تضمینی بدون فینگلیش */
+    /* موتور ترجمه کاملاً بدون محدودیت CORS */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
@@ -228,7 +203,7 @@
       }
     }
 
-    /* مترجم آنلاین */
+    /* بخش ترجمه متن */
     async function translateText() {
       const text = document.getElementById('sourceText').value;
       const target = document.getElementById('targetLang').value;
@@ -237,51 +212,39 @@
       if (!text.trim()) { resultBox.textContent = 'لطفاً متنی برای ترجمه وارد کنید.'; return; }
       resultBox.textContent = 'در حال ترجمه...';
       
-      try {
-        const translated = await fetchTranslation(text, target);
-        resultBox.textContent = translated || 'ترجمه‌ای یافت نشد.';
-      } catch (err) {
-        resultBox.textContent = 'خطا در دریافت ترجمه.';
-      }
+      const translated = await fetchTranslation(text, target);
+      resultBox.textContent = translated || 'خطا در دریافت ترجمه.';
     }
 
-    /* پخش صوتی متن ترجمه شده */
+    /* پخش صوتی ترجمه */
     function speakTranslation() {
       const text = document.getElementById('resultText').textContent;
       const lang = document.getElementById('targetLang').value;
-      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...' || text.includes('خطا')) return;
+      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...') return;
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
         utterance.lang = lang;
         window.speechSynthesis.speak(utterance);
-      } else {
-        alert('مرورگر شما از سیستم خواندن صوتی پشتیبانی نمی‌کند.');
       }
     }
 
-    /* ترجمه خودکار پرامپت هوش مصنوعی */
+    /* ترجمه کاملاً خودکار پرامپت ساخت تصویر هنگام تایپ */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
-      translateTimer = setTimeout(manualTranslatePrompt, 500);
-    }
-
-    async function manualTranslatePrompt() {
-      const prompt = document.getElementById('aiPrompt').value;
-      const enInput = document.getElementById('aiPromptEn');
-      if (!prompt.trim()) { enInput.value = ''; return; }
-      
-      try {
+      translateTimer = setTimeout(async () => {
+        const prompt = document.getElementById('aiPrompt').value;
+        const enInput = document.getElementById('aiPromptEn');
+        if (!prompt.trim()) { enInput.value = ''; return; }
+        
         const translated = await fetchTranslation(prompt, 'en');
         if (translated) enInput.value = translated;
-      } catch (e) {
-        enInput.value = prompt;
-      }
+      }, 400);
     }
 
-    /* ساخت تصویر با ترجمه اتوماتیک قطعی */
+    /* ساخت تصویر همراه با ترجمه اتوماتیک در لحظه */
     async function generateImage() {
       const promptFa = document.getElementById('aiPrompt').value;
       let enPrompt = document.getElementById('aiPromptEn').value;
@@ -290,37 +253,29 @@
       
       if (!promptFa.trim() && !enPrompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
       
-      status.textContent = 'در حال ترجمه و ساخت تصویر... لطفاً چند ثانیه صبر کنید.';
+      status.textContent = 'در حال ترجمه خودکار و ساخت تصویر... لطفاً صبر کنید.';
       img.style.display = 'none';
 
-      // اگر کادر انگلیسی خالی باشد یا سریع دکمه زده شود، همان لحظه ترجمه انجام می‌شود
-      if (promptFa.trim() && (!enPrompt.trim() || enPrompt === promptFa)) {
-        try {
-          const translated = await fetchTranslation(promptFa, 'en');
-          if (translated) {
-            enPrompt = translated;
-            document.getElementById('aiPromptEn').value = translated;
-          }
-        } catch (e) {
-          enPrompt = promptFa;
-        }
+      // ترجمه خودکار در صورتی که قبل از تایپ کامل، روی دکمه کلیک شده باشد
+      if (promptFa.trim() && !enPrompt.trim()) {
+        enPrompt = await fetchTranslation(promptFa, 'en');
+        document.getElementById('aiPromptEn').value = enPrompt;
       }
 
       if (!enPrompt.trim()) enPrompt = promptFa;
 
-      try {
-        const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true`;
-        img.src = imageUrl;
-        img.onload = () => {
-          status.textContent = '';
-          img.style.display = 'block';
-        };
-      } catch (e) {
-        status.textContent = 'خطا در ساخت تصویر.';
-      }
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true`;
+      img.src = imageUrl;
+      img.onload = () => {
+        status.textContent = '';
+        img.style.display = 'block';
+      };
+      img.onerror = () => {
+        status.textContent = 'خطا در بارگذاری تصویر.';
+      };
     }
 
-    /* افزودن تصویر با لینک مستقیم و رمز عبور */
+    /* افزوده به گالری عکس */
     const MY_SECRET_PASS = "123456";
 
     function addDirectImage() {
@@ -328,19 +283,11 @@
       const passInput = document.getElementById('adminPassword');
       const gallery = document.getElementById('galleryGrid');
 
-      if (!urlInput.value.trim()) {
-        alert('لطفاً لینک مستقیم تصویر را وارد کنید.');
-        return;
-      }
-
-      if (passInput.value !== MY_SECRET_PASS) {
-        alert('رمز عبور اشتباه است! دسترسی غیرمجاز.');
-        return;
-      }
+      if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم تصویر را وارد کنید.'); return; }
+      if (passInput.value !== MY_SECRET_PASS) { alert('رمز عبور اشتباه است!'); return; }
 
       const img = document.createElement('img');
       img.src = urlInput.value.trim();
-      img.onerror = () => alert('لینک وارد شده نامعتبر است یا تصویر بارگذاری نشد.');
       gallery.appendChild(img);
 
       urlInput.value = '';
