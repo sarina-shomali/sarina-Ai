@@ -152,7 +152,6 @@
       <option value="fi">فنلاندی</option>
       <option value="no">نروژی</option>
       <option value="da">دانمارکی</option>
-
       <option value="cs">چکی</option>
       <option value="th">تایلندی</option>
       <option value="vi">ویتنامی</option>
@@ -162,11 +161,9 @@
       <option value="bn">بنگالی</option>
       <option value="sw">سواحیلی</option>
       <option value="az">آذربایجانی</option>
-
       <option value="hy">ارمنی</option>
       <option value="ka">گرجی</option>
       <option value="fil">فیلیپینی</option>
-
       <option value="he">عبری</option>
     </select>
     <button class="action-btn" onclick="translateText()">ترجمه آنلاین</button>
@@ -212,7 +209,6 @@
   </div>
 
   <script>
-    // مدیریت رمز عبور با قابلیت ذخیره‌سازی
     function getStoredPassword() {
       return localStorage.getItem('app_admin_pass') || "123456";
     }
@@ -255,44 +251,25 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه دقیق و بدون مشکل فینگلیش */
+    /* تابع ترجمه دقیق (جلوگیری از ایجاد متن فینگلیش) */
     async function fetchTranslation(text, targetLang) {
-      // 1. Google Translate API
-      try {
-        const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
-        if (res.ok) {
-          const data = await res.json();
-          let translated = '';
-          if (data && data[0]) {
-            data[0].forEach(item => {
-              if (item && item[0]) translated += item[0];
-            });
-          }
-          if (translated.trim()) return translated;
-        }
-      } catch (e) {}
-
-      // 2. Lingva API (Fallback)
-      try {
-        const res = await fetch(`https://lingva.ml/api/v1/auto/${targetLang}/${encodeURIComponent(text)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.translation) return data.translation;
-        }
-      } catch (e) {}
-
-      // 3. MyMemory API (Fallback 2)
-      try {
-        const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${targetLang}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && data.responseData && data.responseData.translatedText) {
-            return data.responseData.translatedText;
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('Network response was not ok');
+      
+      const data = await res.json();
+      let translatedText = '';
+      
+      if (data && data[0]) {
+        for (let i = 0; i < data[0].length; i++) {
+          if (data[0][i] && data[0][i][0]) {
+            translatedText += data[0][i][0];
           }
         }
-      } catch (e) {}
-
-      throw new Error('Translation failed');
+      }
+      
+      if (!translatedText.trim()) throw new Error('Empty translation');
+      return translatedText;
     }
 
     async function translateText() {
@@ -307,7 +284,18 @@
         const result = await fetchTranslation(text, target);
         resultBox.textContent = result;
       } catch (err) {
-        resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
+        // روش جایگزین در صورت بروز خطای سرور
+        try {
+          const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${target}`);
+          const data2 = await res2.json();
+          if (data2 && data2.responseData && data2.responseData.translatedText) {
+            resultBox.textContent = data2.responseData.translatedText;
+          } else {
+            resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
+          }
+        } catch (e) {
+          resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
+        }
       }
     }
 
