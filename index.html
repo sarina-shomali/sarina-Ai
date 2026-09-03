@@ -251,24 +251,25 @@
       grid.appendChild(card);
     });
 
-    /* تابع ترجمه دقیق (جلوگیری از ایجاد متن فینگلیش) */
+    /* تابع اصلاح شده ترجمه - بدون فینگلیش */
     async function fetchTranslation(text, targetLang) {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=at&q=${encodeURIComponent(text)}`;
       const res = await fetch(url);
-      if (!res.ok) throw new Error('Network response was not ok');
+      if (!res.ok) throw new Error('Error');
       
       const data = await res.json();
       let translatedText = '';
       
-      if (data && data[0]) {
-        for (let i = 0; i < data[0].length; i++) {
-          if (data[0][i] && data[0][i][0]) {
-            translatedText += data[0][i][0];
+      // استخراج مستقیم متن اصلی ترجمه و حذف آوانگاری/فینگلیش
+      if (data && data[0] && Array.isArray(data[0])) {
+        for (let item of data[0]) {
+          if (item && typeof item[0] === 'string') {
+            translatedText += item[0];
           }
         }
       }
       
-      if (!translatedText.trim()) throw new Error('Empty translation');
+      if (!translatedText.trim()) throw new Error('Empty');
       return translatedText;
     }
 
@@ -284,14 +285,14 @@
         const result = await fetchTranslation(text, target);
         resultBox.textContent = result;
       } catch (err) {
-        // روش جایگزین در صورت بروز خطای سرور
         try {
+          // سرور جایگزین در صورت قطعی گوگل
           const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${target}`);
           const data2 = await res2.json();
           if (data2 && data2.responseData && data2.responseData.translatedText) {
             resultBox.textContent = data2.responseData.translatedText;
           } else {
-            resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
+            resultBox.textContent = 'خطا در دریافت ترجمه.';
           }
         } catch (e) {
           resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
@@ -303,7 +304,7 @@
     function speakTranslation() {
       const text = document.getElementById('resultText').textContent;
       const lang = document.getElementById('targetLang').value;
-      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...' || text === 'خطا در ارتباط با سرور ترجمه.') return;
+      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...' || text.includes('خطا')) return;
 
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
