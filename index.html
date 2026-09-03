@@ -64,37 +64,12 @@
     textarea { height: 80px; resize: none; }
     select, .action-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
     .action-btn { background: #ff9800; color: white; border: none; cursor: pointer; }
-    .result-box { background: #f0f0f0; min-height: 60px; padding: 10px; border-radius: 8px; margin-top: 10px; word-break: break-word; position: relative; }
+    .result-box { background: #f0f0f0; min-height: 60px; padding: 10px; border-radius: 8px; margin-top: 10px; word-break: break-word; }
 
     /* گالری تصاویر */
     .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-    .gallery-card { background: #f9f9f9; border: 1px solid #ddd; border-radius: 8px; padding: 8px; display: flex; flex-direction: column; align-items: center; }
-    .gallery-card img { width: 100%; height: 120px; object-fit: cover; border-radius: 6px; }
-    .gallery-card .img-title { font-size: 12px; font-weight: bold; margin: 5px 0; width: 100%; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .gallery-card .card-btns { display: flex; gap: 4px; width: 100%; margin-top: 4px; }
-    .gallery-card .card-btns button { flex: 1; padding: 6px 2px; border: none; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
-    .btn-download { background: #2196f3; }
-    .btn-rename { background: #ff9800; }
-    .btn-delete { background: #f44336; }
-
+    .gallery img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
-    
-    .tts-btn {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: #4caf50;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      cursor: pointer;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
   </style>
 </head>
 <body>
@@ -121,7 +96,6 @@
     <div class="grid" id="grid"></div>
   </div>
 
-  <!-- تب مترجم -->
   <div id="tab-trans" class="tab-content">
     <h3 style="margin-top:0; text-align:center;">مترجم آنلاین گوگل</h3>
     <label>متن (فارسی یا هر زبانی):</label>
@@ -135,43 +109,10 @@
       <option value="fr">فرانسوی</option>
       <option value="de">آلمانی</option>
       <option value="es">اسپانیایی</option>
-      <option value="it">ایتالیایی</option>
-      <option value="ru">روسی</option>
-      <option value="zh-CN">چینی (ساده شده)</option>
-      <option value="ja">ژاپنی</option>
-      <option value="ko">کره‌ای</option>
-      <option value="hi">هندی</option>
-      <option value="pt">پرتغالی</option>
-      <option value="nl">هلندی</option>
-      <option value="sv">سوئدی</option>
-      <option value="el">یونانی</option>
-      <option value="pl">لهستانی</option>
-      <option value="uk">اوکراینی</option>
-      <option value="ro">رومانیایی</option>
-      <option value="hu">مجاری</option>
-      <option value="fi">فنلاندی</option>
-      <option value="no">نروژی</option>
-      <option value="da">دانمارکی</option>
-      <option value="cs">چکی</option>
-      <option value="th">تایلندی</option>
-      <option value="vi">ویتنامی</option>
-      <option value="id">اندونزیایی</option>
-      <option value="ms">مالایی</option>
-      <option value="ur">اردو</option>
-      <option value="bn">بنگالی</option>
-      <option value="sw">سواحیلی</option>
-      <option value="az">آذربایجانی</option>
-      <option value="hy">ارمنی</option>
-      <option value="ka">گرجی</option>
-      <option value="fil">فیلیپینی</option>
-      <option value="he">عبری</option>
     </select>
     <button class="action-btn" onclick="translateText()">ترجمه آنلاین</button>
     <h4>نتیجه ترجمه:</h4>
-    <div class="result-box" id="resultBoxContainer">
-      <button class="tts-btn" onclick="speakTranslation()" title="پخش صوتی">🔊</button>
-      <div id="resultText" style="padding-left: 35px;">نتیجه اینجا نمایش داده می‌شود...</div>
-    </div>
+    <div class="result-box" id="resultText">نتیجه اینجا نمایش داده می‌شود...</div>
   </div>
 
   <div id="tab-ai" class="tab-content">
@@ -189,30 +130,21 @@
     <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image">
   </div>
 
-  <!-- تب گالری عکس -->
   <div id="tab-upload" class="tab-content">
     <h3 style="margin-top:0; text-align:center;">آپلود لینک مستقیم عکس 📸</h3>
     
-    <label>عنوان عکس:</label>
-    <input type="text" id="directImageTitle" placeholder="مثلاً: عکس طبیعت شمال">
-
-    <label style="margin-top:8px; display:block;">لینک مستقیم تصویر (URL):</label>
+    <label>لینک مستقیم تصویر (URL):</label>
     <input type="text" id="directImageUrl" placeholder="https://example.com/image.jpg" dir="ltr">
     
-    <label style="margin-top:8px; display:block;">رمز عبور مدیر:</label>
+    <label style="margin-top:10px; display:block;">رمز عبور مدیر:</label>
     <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
     
     <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
-    <button class="action-btn" style="background:#607d8b; margin-top:8px;" onclick="changeAdminPassword()">🔑 تغییر رمز عبور مدیر</button>
     
     <div class="gallery" id="galleryGrid"></div>
   </div>
 
   <script>
-    function getStoredPassword() {
-      return localStorage.getItem('app_admin_pass') || "123456";
-    }
-
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
       document.querySelectorAll('.nav button').forEach(el => el.classList.remove('active'));
@@ -251,72 +183,40 @@
       grid.appendChild(card);
     });
 
-    /* تابع اصلاح شده ترجمه - بدون فینگلیش */
+    /* تابع عمومی ترجمه استاندارد - حذف کامل فینگلیش */
     async function fetchTranslation(text, targetLang) {
-      const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=at&q=${encodeURIComponent(text)}`;
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Error');
-      
+      const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`);
+      if (!res.ok) throw new Error('Network error');
       const data = await res.json();
-      let translatedText = '';
       
-      // استخراج مستقیم متن اصلی ترجمه و حذف آوانگاری/فینگلیش
+      let translatedText = '';
       if (data && data[0] && Array.isArray(data[0])) {
         for (let item of data[0]) {
-          if (item && typeof item[0] === 'string') {
+          // فقط متن ترجمه شده را استخراج می‌کند و آوانگاری (فینگلیش) را نادیده می‌گیرد
+          if (item && typeof item[0] === 'string' && item[1] !== null) {
             translatedText += item[0];
           }
         }
       }
-      
-      if (!translatedText.trim()) throw new Error('Empty');
       return translatedText;
     }
 
+    /* مترجم آنلاین */
     async function translateText() {
       const text = document.getElementById('sourceText').value;
       const target = document.getElementById('targetLang').value;
       const resultBox = document.getElementById('resultText');
-      
       if (!text.trim()) { resultBox.textContent = 'لطفاً متنی برای ترجمه وارد کنید.'; return; }
       resultBox.textContent = 'در حال ترجمه...';
-
       try {
-        const result = await fetchTranslation(text, target);
-        resultBox.textContent = result;
+        const translated = await fetchTranslation(text, target);
+        resultBox.textContent = translated || 'ترجمه‌ای یافت نشد.';
       } catch (err) {
-        try {
-          // سرور جایگزین در صورت قطعی گوگل
-          const res2 = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=autodetect|${target}`);
-          const data2 = await res2.json();
-          if (data2 && data2.responseData && data2.responseData.translatedText) {
-            resultBox.textContent = data2.responseData.translatedText;
-          } else {
-            resultBox.textContent = 'خطا در دریافت ترجمه.';
-          }
-        } catch (e) {
-          resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
-        }
+        resultBox.textContent = 'خطا در ارتباط با سرور ترجمه.';
       }
     }
 
-    /* تلفظ صوتی متن ترجمه شده */
-    function speakTranslation() {
-      const text = document.getElementById('resultText').textContent;
-      const lang = document.getElementById('targetLang').value;
-      if (!text || text === 'نتیجه اینجا نمایش داده می‌شود...' || text === 'در حال ترجمه...' || text.includes('خطا')) return;
-
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang;
-        window.speechSynthesis.speak(utterance);
-      } else {
-        alert('مرورگر شما از قابلیت خواندن صوتی پشتیبانی نمی‌کند.');
-      }
-    }
-
-    /* ترجمه پرامپت هوش مصنوعی */
+    /* ترجمه خودکار و دستی پرامپت هوش مصنوعی */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
@@ -330,13 +230,15 @@
       
       try {
         const translated = await fetchTranslation(prompt, 'en');
-        enInput.value = translated;
+        if (translated) {
+          enInput.value = translated;
+        }
       } catch (e) {
-        enInput.value = prompt;
+        // در صورت عدم پاسخ‌دهی گوگل، جهت جلوگیری از خطا متن اولیه را تغییر نمی‌دهد
       }
     }
 
-    /* ساخت تصویر */
+    /* ساخت تصویر با هوش مصنوعی */
     async function generateImage() {
       let enPrompt = document.getElementById('aiPromptEn').value;
       const promptFa = document.getElementById('aiPrompt').value;
@@ -344,6 +246,7 @@
       const img = document.getElementById('aiResultImg');
       
       if (!promptFa.trim() && !enPrompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
+      
       if (!enPrompt.trim()) enPrompt = promptFa;
 
       status.textContent = 'در حال ساخت تصویر با هوش مصنوعی... لطفاً چند ثانیه صبر کنید.';
@@ -361,134 +264,32 @@
       }
     }
 
-    /* مدیریت گالری عکس‌ها (افزودن، دانلود، تغییر نام، حذف با رمز) */
+    /* افزودن تصویر با لینک مستقیم و رمز عبور */
+    const MY_SECRET_PASS = "123456";
+
     function addDirectImage() {
-      const titleInput = document.getElementById('directImageTitle');
       const urlInput = document.getElementById('directImageUrl');
       const passInput = document.getElementById('adminPassword');
+      const gallery = document.getElementById('galleryGrid');
 
       if (!urlInput.value.trim()) {
         alert('لطفاً لینک مستقیم تصویر را وارد کنید.');
         return;
       }
 
-      if (passInput.value !== getStoredPassword()) {
+      if (passInput.value !== MY_SECRET_PASS) {
         alert('رمز عبور اشتباه است! دسترسی غیرمجاز.');
         return;
       }
 
-      const imgTitle = titleInput.value.trim() || 'تصویر جدید';
-      createGalleryCard(imgTitle, urlInput.value.trim());
+      const img = document.createElement('img');
+      img.src = urlInput.value.trim();
+      img.onerror = () => alert('لینک وارد شده نامعتبر است یا تصویر بارگذاری نشد.');
+      gallery.appendChild(img);
 
-      titleInput.value = '';
       urlInput.value = '';
       passInput.value = '';
       alert('تصویر با موفقیت اضافه شد!');
-    }
-
-    function createGalleryCard(title, url) {
-      const gallery = document.getElementById('galleryGrid');
-
-      const card = document.createElement('div');
-      card.className = 'gallery-card';
-
-      const img = document.createElement('img');
-      img.src = url;
-      img.alt = title;
-      img.onerror = () => alert('لینک تصویر بارگذاری نشد یا معتبر نیست.');
-
-      const titleEl = document.createElement('div');
-      titleEl.className = 'img-title';
-      titleEl.textContent = title;
-
-      const btnsDiv = document.createElement('div');
-      btnsDiv.className = 'card-btns';
-
-      const downloadBtn = document.createElement('button');
-      downloadBtn.className = 'btn-download';
-      downloadBtn.textContent = 'دانلود';
-      downloadBtn.onclick = () => downloadImage(url, titleEl.textContent);
-
-      const renameBtn = document.createElement('button');
-      renameBtn.className = 'btn-rename';
-      renameBtn.textContent = 'تغییر نام';
-      renameBtn.onclick = () => renameImage(titleEl);
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'btn-delete';
-      deleteBtn.textContent = 'حذف';
-      deleteBtn.onclick = () => deleteImage(card);
-
-      btnsDiv.appendChild(downloadBtn);
-      btnsDiv.appendChild(renameBtn);
-      btnsDiv.appendChild(deleteBtn);
-
-      card.appendChild(img);
-      card.appendChild(titleEl);
-      card.appendChild(btnsDiv);
-
-      gallery.appendChild(card);
-    }
-
-    /* دانلود تصویر */
-    async function downloadImage(url, filename) {
-      try {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = filename || 'image';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(blobUrl);
-      } catch (e) {
-        window.open(url, '_blank');
-      }
-    }
-
-    /* تغییر نام با رمز عبور */
-    function renameImage(titleElement) {
-      const pass = prompt('لطفاً رمز عبور مدیر را وارد کنید:');
-      if (pass !== getStoredPassword()) {
-        alert('رمز عبور اشتباه است!');
-        return;
-      }
-      const newTitle = prompt('نام جدید تصویر را وارد کنید:', titleElement.textContent);
-      if (newTitle && newTitle.trim() !== '') {
-        titleElement.textContent = newTitle.trim();
-        alert('نام تصویر با موفقیت تغییر کرد.');
-      }
-    }
-
-    /* حذف با رمز عبور */
-    function deleteImage(cardElement) {
-      const pass = prompt('لطفاً رمز عبور مدیر را وارد کنید:');
-      if (pass !== getStoredPassword()) {
-        alert('رمز عبور اشتباه است!');
-        return;
-      }
-      if (confirm('آیا از حذف این تصویر اطمینان دارید؟')) {
-        cardElement.remove();
-        alert('تصویر حذف شد.');
-      }
-    }
-
-    /* تغییر رمز عبور مدیر */
-    function changeAdminPassword() {
-      const currentPass = prompt('رمز عبور فعلی مدیر را وارد کنید:');
-      if (currentPass !== getStoredPassword()) {
-        alert('رمز عبور فعلی اشتباه است!');
-        return;
-      }
-      const newPass = prompt('رمز عبور جدید را وارد کنید:');
-      if (newPass && newPass.trim() !== '') {
-        localStorage.setItem('app_admin_pass', newPass.trim());
-        alert('رمز عبور مدیر با موفقیت تغییر یافت.');
-      } else {
-        alert('رمز عبور جدید نمی‌تواند خالی باشد.');
-      }
     }
   </script>
 </body>
