@@ -74,7 +74,7 @@
     }
 
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
-    .ai-download-btn { width: 100%; padding: 12px; margin-top: 10px; border: none; border-radius: 8px; background: #4caf50; color: white; font-weight: bold; font-size: 16px; cursor: pointer; display: none; }
+    .ai-download-btn { width: 100%; margin-top: 10px; padding: 12px; border: 0; border-radius: 8px; background: #4caf50; color: #fff; font-size: 16px; cursor: pointer; display: none; }
 
     /* سازگاری بهتر با موبایل و WebView */
     html, body {
@@ -153,7 +153,7 @@
     <button class="action-btn" style="background:#9c27b0;" onclick="generateImage()">ساخت تصویر با AI</button>
     <div id="aiStatus" style="margin-top:10px; text-align:center; font-size:14px; color:#666;"></div>
     <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image">
-    <button id="aiDownloadBtn" class="ai-download-btn" type="button" onclick="downloadGeneratedImage()">⬇️ دانلود تصویر</button>
+      <button id="aiDownloadBtn" class="ai-download-btn" type="button" onclick="downloadGeneratedImage()">⬇️ دانلود تصویر</button>
   </div>
 
   <script>
@@ -411,35 +411,11 @@
         status.textContent =
           'تصویر بارگذاری نشد. اینترنت یا دسترسی سرویس تصویر را بررسی کنید.';
         img.style.display = 'none';
-        document.getElementById('aiDownloadBtn').style.display = 'none';
       };
 
       img.src = imageUrl;
     }
 
-  
-    async function downloadGeneratedImage() {
-      const img = document.getElementById('aiResultImg');
-      const status = document.getElementById('aiStatus');
-      if (!img.src || img.style.display === 'none') return;
-      try {
-        status.textContent = 'در حال آماده‌سازی دانلود...';
-        const response = await fetch(img.src, { mode: 'cors', cache: 'no-store' });
-        if (!response.ok) throw new Error('Download failed');
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'sarina-ai-image.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-        status.textContent = 'دانلود تصویر انجام شد.';
-      } catch (e) {
-        const a = document.createElement('a');
-        a.href = img.src; a.target = '_blank'; a.download = 'sarina-ai-image.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        status.textContent = 'اگر دانلود خودکار شروع نشد، تصویر در صفحه جدید باز می‌شود و می‌توانید آن را ذخیره کنید.';
-      }
-    }
-</script>
+  </script>
 </body>
 </html>
