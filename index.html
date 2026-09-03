@@ -38,7 +38,7 @@
     .card { aspect-ratio: 1; background: #2196f3; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; color: white; }
     .card.flipped { background: #fff; border: 2px solid #2196f3; }
     
-    textarea, input[type="text"], input[type="password"] { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 8px; }
+    textarea, input[type="text"] { width: 100%; border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-top: 8px; }
     textarea { height: 80px; resize: none; }
     select, .action-btn { width: 100%; padding: 12px; margin-top: 10px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; }
     .action-btn { background: #ff9800; color: white; border: none; cursor: pointer; }
@@ -71,8 +71,6 @@
       box-shadow: 0 2px 4px rgba(0,0,0,0.15);
     }
 
-    .gallery { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 15px; }
-    .gallery img { width: 100%; height: 140px; object-fit: cover; border-radius: 8px; }
     .ai-img-result { width: 100%; border-radius: 8px; margin-top: 15px; display: none; }
   </style>
 </head>
@@ -92,7 +90,6 @@
     <button id="btn-game" class="active" onclick="switchTab('game')">🎮 بازی</button>
     <button id="btn-trans" onclick="switchTab('trans')">🌐 مترجم</button>
     <button id="btn-ai" onclick="switchTab('ai')">🎨 ساخت تصویر</button>
-    <button id="btn-upload" onclick="switchTab('upload')">📸 گالری عکس</button>
   </div>
 
   <div id="tab-game" class="tab-content active">
@@ -135,20 +132,6 @@
     <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image">
   </div>
 
-  <div id="tab-upload" class="tab-content">
-    <h3 style="margin-top:0; text-align:center;">آپلود لینک مستقیم عکس 📸</h3>
-    
-    <label>لینک مستقیم تصویر (URL):</label>
-    <input type="text" id="directImageUrl" placeholder="https://example.com/image.jpg" dir="ltr">
-    
-    <label style="margin-top:10px; display:block;">رمز عبور مدیر:</label>
-    <input type="password" id="adminPassword" placeholder="رمز عبور را وارد کنید">
-    
-    <button class="action-btn" style="background:#4caf50;" onclick="addDirectImage()">افزودن عکس به گالری</button>
-    
-    <div class="gallery" id="galleryGrid"></div>
-  </div>
-
   <script>
     function switchTab(tab) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -188,7 +171,7 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه بدون فینگلیش و کاملاً اصلاح شده */
+    /* موتور ترجمه */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
@@ -205,7 +188,6 @@
           });
         }
         
-        // اگر نتیجه دقیقاً شامل عبارت فینگلیش Kitab بود آن را به ترجمه واقعی Book اصلاح می‌کند
         if (translatedText.toLowerCase().includes('kitab')) {
           translatedText = translatedText.replace(/kitab/gi, 'Book');
         }
@@ -243,7 +225,7 @@
       }
     }
 
-    /* ترجمه کاملاً خودکار پرامپت ساخت تصویر هنگام تایپ */
+    /* ترجمه خودکار پرامپت ساخت تصویر */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
@@ -257,7 +239,7 @@
       }, 400);
     }
 
-    /* ساخت تصویر همراه با ترجمه اتوماتیک در لحظه */
+    /* ساخت تصویر با AI */
     async function generateImage() {
       const promptFa = document.getElementById('aiPrompt').value;
       let enPrompt = document.getElementById('aiPromptEn').value;
@@ -269,7 +251,6 @@
       status.textContent = 'در حال ترجمه خودکار و ساخت تصویر... لطفاً صبر کنید.';
       img.style.display = 'none';
 
-      // ترجمه خودکار در صورتی که قبل از تایپ کامل، روی دکمه کلیک شده باشد
       if (promptFa.trim() && !enPrompt.trim()) {
         enPrompt = await fetchTranslation(promptFa, 'en');
         document.getElementById('aiPromptEn').value = enPrompt;
@@ -286,26 +267,6 @@
       img.onerror = () => {
         status.textContent = 'خطا در بارگذاری تصویر.';
       };
-    }
-
-    /* افزوده به گالری عکس */
-    const MY_SECRET_PASS = "123456";
-
-    function addDirectImage() {
-      const urlInput = document.getElementById('directImageUrl');
-      const passInput = document.getElementById('adminPassword');
-      const gallery = document.getElementById('galleryGrid');
-
-      if (!urlInput.value.trim()) { alert('لطفاً لینک مستقیم تصویر را وارد کنید.'); return; }
-      if (passInput.value !== MY_SECRET_PASS) { alert('رمز عبور اشتباه است!'); return; }
-
-      const img = document.createElement('img');
-      img.src = urlInput.value.trim();
-      gallery.appendChild(img);
-
-      urlInput.value = '';
-      passInput.value = '';
-      alert('تصویر با موفقیت اضافه شد!');
     }
   </script>
 </body>
