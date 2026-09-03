@@ -171,13 +171,12 @@
       grid.appendChild(card);
     });
 
-    /* موتور ترجمه ایمن برای موبایل */
+    /* موتور ترجمه */
     async function fetchTranslation(text, targetLang) {
       if (!text || !text.trim()) return '';
       try {
         const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
         const res = await fetch(url);
-        if (!res.ok) return text;
         const data = await res.json();
         
         let translatedText = '';
@@ -188,9 +187,10 @@
             }
           });
         }
+        
         return translatedText || text;
       } catch (err) {
-        return text; // بازگشت متن اصلی در صورت خطای شبکه یا بلاک شدن توسط موبایل
+        return text;
       }
     }
 
@@ -221,18 +221,32 @@
       }
     }
 
-    /* ترجمه خودکار پرامپت ساخت تصویر */
+    /* ترجمه خودکار پرامپت ساخت تصویر (بهینه‌شده برای موبایل) */
     let translateTimer;
     function autoTranslatePrompt() {
       clearTimeout(translateTimer);
       translateTimer = setTimeout(async () => {
         const prompt = document.getElementById('aiPrompt').value;
         const enInput = document.getElementById('aiPromptEn');
-        if (!prompt.trim()) { enInput.value = ''; return; }
+        const status = document.getElementById('aiStatus');
         
-        const translated = await fetchTranslation(prompt, 'en');
-        if (translated) enInput.value = translated;
-      }, 600);
+        if (!prompt.trim()) { 
+          enInput.value = ''; 
+          status.textContent = '';
+          return; 
+        }
+        
+        try {
+          status.textContent = 'در حال ترجمه خودکار...';
+          const translated = await fetchTranslation(prompt, 'en');
+          if (translated) {
+            enInput.value = translated;
+            status.textContent = '';
+          }
+        } catch (err) {
+          status.textContent = '';
+        }
+      }, 800); // تاخیر مناسب برای جلوگیری از فشار روی کیبورد موبایل
     }
 
     /* ساخت تصویر با AI */
@@ -244,7 +258,7 @@
       
       if (!promptFa.trim() && !enPrompt.trim()) { alert('لطفاً توصیف تصویر را بنویسید.'); return; }
       
-      status.textContent = 'در حال آماده‌سازی و ساخت تصویر... لطفاً صبر کنید.';
+      status.textContent = 'در حال ساخت تصویر... لطفاً صبر کنید.';
       img.style.display = 'none';
 
       if (promptFa.trim() && !enPrompt.trim()) {
@@ -254,14 +268,14 @@
 
       if (!enPrompt.trim()) enPrompt = promptFa;
 
-      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true&t=${Date.now()}`;
+      const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(enPrompt)}?width=512&height=512&nologo=true`;
       img.src = imageUrl;
       img.onload = () => {
         status.textContent = '';
         img.style.display = 'block';
       };
       img.onerror = () => {
-        status.textContent = 'خطا در بارگذاری تصویر.';
+        status.textContent = 'خطا در بارگذاری تصویر. لطفاً اتصال اینترنت یا فیلترشکن را بررسی کنید.';
       };
     }
   </script>
