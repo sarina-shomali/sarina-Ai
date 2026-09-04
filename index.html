@@ -361,24 +361,31 @@
       img.src = currentImageUrl;
     }
 
-    /* تابع دانلود مستقیم مخصوص موبایل و کامپیوتر */
+    /* تابع دانلود واقعی و مستقیم فایل تصویر (مناسب برای موبایل) */
     function downloadImage() {
       if (!currentImageUrl) return;
 
       const status = document.getElementById('aiStatus');
-      status.textContent = 'در حال انتقال به صفحه دانلود...';
+      status.textContent = 'در حال دانلود مستقیم تصویر...';
 
-      const a = document.createElement('a');
-      a.href = currentImageUrl;
-      a.target = '_blank';
-      a.download = 'sarina-ai-' + Date.now() + '.png';
-      
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-
-      status.textContent = 'تصویر باز شد؛ در مرورگر گوشی روی عکس نگه‌دارید و دانلود را بزنید. 🎉';
-      setTimeout(() => { status.textContent = ''; }, 5000);
+      fetch(currentImageUrl)
+        .then(response => response.blob())
+        .then(blob => {
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'sarina-ai-' + Date.now() + '.png'; // ذخیره قطعی با فرمت PNG
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+          
+          status.textContent = 'تصویر با موفقیت دانلود شد و در پوشه دانلودها قرار گرفت! 🎉';
+          setTimeout(() => { status.textContent = ''; }, 5000);
+        })
+        .catch(err => {
+          status.textContent = 'خطا در دانلود. لطفاً اتصال اینترنت را بررسی کنید.';
+        });
     }
   </script>
 </body>
