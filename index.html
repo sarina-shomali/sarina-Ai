@@ -152,7 +152,7 @@
     
     <button class="action-btn" style="background:#9c27b0;" onclick="generateImage()">ساخت تصویر با AI</button>
     <div id="aiStatus" style="margin-top:10px; text-align:center; font-size:14px; color:#666;"></div>
-    <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image">
+    <img id="aiResultImg" class="ai-img-result" alt="AI Generated Image" crossorigin="anonymous">
     <button id="aiDownloadBtn" class="ai-download-btn" type="button" onclick="downloadGeneratedImage()">⬇️ دانلود تصویر</button>
   </div>
 
@@ -356,7 +356,6 @@
 
         const translated = await fetchTranslation(prompt, 'en');
 
-        // پاسخ قدیمی نباید ترجمه جدید را خراب کند.
         if (requestId !== translateRequestId) return;
 
         enInput.value = translated || '';
@@ -384,7 +383,6 @@
       img.style.display = 'none';
       document.getElementById('aiDownloadBtn').style.display = 'none';
 
-      // اگر ترجمه خودکار انجام نشده باشد، هنگام ساخت تصویر دوباره تلاش می‌کنیم.
       if (promptFa && (!enPrompt || enPrompt === 'در حال ترجمه...')) {
         enPrompt = await fetchTranslation(promptFa, 'en');
 
@@ -393,7 +391,6 @@
         }
       }
 
-      // اگر سرویس ترجمه در موبایل در دسترس نبود، ساخت تصویر متوقف نمی‌شود.
       if (!enPrompt) enPrompt = promptFa;
 
       const imageUrl =
@@ -417,29 +414,63 @@
       img.src = imageUrl;
     }
 
-  
+    /* =========================
+       توابع جدید و بهینه‌شده برای دانلود مستقیم و صحیح تصویر
+       ========================= */
+
     async function downloadGeneratedImage() {
       const img = document.getElementById('aiResultImg');
       const status = document.getElementById('aiStatus');
       if (!img.src || img.style.display === 'none') return;
+
+      status.textContent = 'در حال آماده‌سازی فایل تصویر...';
+
       try {
-        status.textContent = 'در حال آماده‌سازی دانلود...';
+        // روش اول: دانلود مستقیم با Fetch و Blob (به همراه تعیین نوع MIME مشخص)
         const response = await fetch(img.src, { mode: 'cors', cache: 'no-store' });
-        if (!response.ok) throw new Error('Download failed');
+        if (!response.ok) throw new Error('Network error');
+        
         const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = 'sarina-ai-image.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 2000);
-        status.textContent = 'دانلود تصویر انجام شد.';
+        // ایجاد یک بلاب جدید با فرمت صریح image/png
+        const imageBlob = new Blob([blob], { type: 'image/png' });
+        const blobUrl = URL.createObjectURL(imageBlob);
+
+        const fileName = 'sarina-ai-' + Date.now() + '.png';
+        
+        triggerDownload(blobUrl, fileName);
+
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+        status.textContent = 'تصویر با موفقیت ذخیره شد.';
       } catch (e) {
-        const a = document.createElement('a');
-        a.href = img.src; a.target = '_blank'; a.download = 'sarina-ai-image.png';
-        document.body.appendChild(a); a.click(); a.remove();
-        status.textContent = 'اگر دانلود خودکار شروع نشد، تصویر در صفحه جدید باز می‌شود و می‌توانید آن را ذخیره کنید.';
+        // روش دوم: رسم تصویر روی Canvas برای استخراج Data URL استاندارد در صورت بروز محدودیت CORS
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth || 512;
+          canvas.height = img.naturalHeight || 512;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0);
+
+          const dataUrl = canvas.toDataURL('image/png');
+          const fileName = 'sarina-ai-' + Date.now() + '.png';
+
+          triggerDownload(dataUrl, fileName);
+          status.textContent = 'تصویر ذخیره شد.';
+        } catch (err) {
+          // روش سوم: پشتیبان برای مرورگرهای خاص موبایل که دانلود خودکار را مسدود می‌کنند
+          window.open(img.src, '_blank');
+          status.textContent = 'در صورت عدم شروع دانلود، انگشت خود را روی تصویر نگه‌دارید و گزینه Save Image را بزنید.';
+        }
       }
     }
-</script>
+
+    function triggerDownload(url, filename) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+  </script>
 </body>
 </html>
