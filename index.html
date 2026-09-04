@@ -349,7 +349,7 @@
       img.onload = () => {
         status.textContent = '';
         img.style.display = 'block';
-        downloadBtn.style.display = 'block'; // نمایش دکمه دانلود بعد از آماده شدن عکس
+        downloadBtn.style.display = 'block';
       };
 
       img.onerror = () => {
@@ -361,38 +361,24 @@
       img.src = currentImageUrl;
     }
 
-    /* تابع دانلود مستقیم با فرمت PNG برای گوشی */
+    /* تابع دانلود مستقیم مخصوص موبایل و کامپیوتر */
     function downloadImage() {
       if (!currentImageUrl) return;
-      
-      const status = document.getElementById('aiStatus');
-      status.textContent = 'در حال آماده‌سازی فایل جهت دانلود...';
 
-      fetch(currentImageUrl)
-        .then(response => response.blob())
-        .then(blob => {
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = 'sarina-ai-' + Date.now() + '.png'; // اجبار به ذخیره با فرمت PNG
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          status.textContent = 'تصویر با موفقیت در پوشه دانلودها ذخیره شد! 🎉';
-          setTimeout(() => { status.textContent = ''; }, 4000);
-        })
-        .catch(err => {
-          // راه حل جایگزین اگر مرورگر محدودیت ایجاد کرد
-          const a = document.createElement('a');
-          a.href = currentImageUrl;
-          a.target = '_blank';
-          a.download = 'sarina-ai.png';
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          status.textContent = '';
-        });
+      const status = document.getElementById('aiStatus');
+      status.textContent = 'در حال انتقال به صفحه دانلود...';
+
+      const a = document.createElement('a');
+      a.href = currentImageUrl;
+      a.target = '_blank';
+      a.download = 'sarina-ai-' + Date.now() + '.png';
+      
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      status.textContent = 'تصویر باز شد؛ در مرورگر گوشی روی عکس نگه‌دارید و دانلود را بزنید. 🎉';
+      setTimeout(() => { status.textContent = ''; }, 5000);
     }
   </script>
 </body>
